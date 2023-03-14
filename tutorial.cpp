@@ -10,7 +10,7 @@
 
 const uint32_t WINDOW_WIDTH = 800;
 const uint32_t WINDOW_HEIGHT = 600;
-const char* WINDOW_TITLE = "Hello Triangle";
+const char* APP_NAME = "Hello Triangle";
 
 class HelloTriangleApplication {
 public:
@@ -28,10 +28,11 @@ private:
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);  // do not create the default OpenGL context
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);  // will relax this requirement later
 
-		window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, nullptr, nullptr);
+		window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, APP_NAME, nullptr, nullptr);
 	}
 
 	void initVulkan() {
+		createInstance();
 	}
 
 	void mainLoop() {
@@ -41,13 +42,44 @@ private:
 	}
 
 	void cleanup() {
+		vkDestroyInstance(instance, nullptr);
+
 		glfwDestroyWindow(window);
 
 		glfwTerminate();
 	}
 
+	// Vulkan-specific
+
+	void createInstance() {
+		VkApplicationInfo appInfo{};
+		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		appInfo.pApplicationName = APP_NAME;
+		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.pEngineName = "No Engine";
+		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.apiVersion = VK_API_VERSION_1_0;
+
+		uint32_t glfwExtensionCount = 0;
+		const char** glfwExtensions;
+		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+		VkInstanceCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		createInfo.pApplicationInfo = &appInfo;
+		createInfo.enabledExtensionCount = glfwExtensionCount;
+		createInfo.ppEnabledExtensionNames = glfwExtensions;
+		createInfo.enabledLayerCount = 0;
+
+		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create instance!");
+		}
+	}
+
 private:
 	GLFWwindow* window;
+
+	VkInstance instance;
 };
 
 int main() {
